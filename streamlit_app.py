@@ -15,13 +15,11 @@ from sklearn.metrics import (
 )
 import optuna
 
-# --- Cache CSV loading ---
 @st.cache_data
 def load_data():
     df = pd.read_csv("Fertilizer Prediction.csv")
     return df
 
-# --- Cache model training ---
 @st.cache_resource
 def train_model(df):
     label_encoders = {}
@@ -59,24 +57,25 @@ def train_model(df):
 
     return clf, label_encoders, X_test, y_test, y_pred, accuracy
 
-# --- Load data and train model ---
+# Load and train
 df = load_data()
 clf, label_encoders, X_test, y_test, y_pred, accuracy = train_model(df)
 
-# --- Streamlit UI ---
 st.title("🌿 Fertilizer Prediction Web App")
 
-st.sidebar.header("Input Parameters")
-temp = st.sidebar.number_input("Temperature", 0.0, 100.0)
-humidity = st.sidebar.number_input("Humidity", 0.0, 100.0)
-moisture = st.sidebar.number_input("Moisture", 0.0, 100.0)
-soil = st.sidebar.selectbox("Soil Type", label_encoders['Soil Type'].classes_)
-crop = st.sidebar.selectbox("Crop Type", label_encoders['Crop Type'].classes_)
-nitrogen = st.sidebar.number_input("Nitrogen", 0.0, 100.0)
-potassium = st.sidebar.number_input("Potassium", 0.0, 100.0)
-phosphorous = st.sidebar.number_input("Phosphorous", 0.0, 100.0)
+# User inputs on main page
+st.header("Input Parameters")
 
-if st.sidebar.button("🔍 Predict"):
+temp = st.number_input("Temperature (°C)", min_value=0.0, max_value=100.0, value=25.0)
+humidity = st.number_input("Humidity (%)", min_value=0.0, max_value=100.0, value=50.0)
+moisture = st.number_input("Moisture (%)", min_value=0.0, max_value=100.0, value=30.0)
+soil = st.selectbox("Soil Type", label_encoders['Soil Type'].classes_)
+crop = st.selectbox("Crop Type", label_encoders['Crop Type'].classes_)
+nitrogen = st.number_input("Nitrogen (N)", min_value=0.0, max_value=100.0, value=10.0)
+potassium = st.number_input("Potassium (K)", min_value=0.0, max_value=100.0, value=10.0)
+phosphorous = st.number_input("Phosphorous (P)", min_value=0.0, max_value=100.0, value=10.0)
+
+if st.button("Predict Fertilizer"):
     soil_enc = label_encoders['Soil Type'].transform([soil])[0]
     crop_enc = label_encoders['Crop Type'].transform([crop])[0]
     input_data = np.array([[temp, humidity, moisture, soil_enc, crop_enc,
@@ -85,6 +84,7 @@ if st.sidebar.button("🔍 Predict"):
     fert_name = label_encoders['Fertilizer Name'].inverse_transform([pred_code])[0]
     st.success(f"✅ Predicted Fertilizer: **{fert_name}**")
 
+# Show model accuracy and plots as before
 st.markdown(f"### Model Accuracy: `{accuracy:.2%}`")
 
 st.markdown("### Confusion Matrix")
