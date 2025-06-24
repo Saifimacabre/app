@@ -1,17 +1,21 @@
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import tkinter as tk
-from tkinter import messagebox
+import streamlit as st
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay, precision_recall_curve, PrecisionRecallDisplay
-import optuna
-import streamlit as st
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+    precision_recall_curve,
+    PrecisionRecallDisplay
+)
 
+import optuna
 # === Data Loading ===
 df = pd.read_csv("F:\\ML pros\\Fertilizer Prediction.csv")
 label_encoders = {}
