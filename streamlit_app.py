@@ -16,7 +16,7 @@ from sklearn.metrics import (
 import optuna
 
 # === Load and Preprocess Data ===
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def load_data_and_train_model():
     df = pd.read_csv("Fertilizer Prediction.csv")  # Make sure this CSV is in your GitHub repo
     label_encoders = {}
