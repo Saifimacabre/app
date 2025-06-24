@@ -15,12 +15,16 @@ from sklearn.metrics import (
 )
 import optuna
 
-# === Load and Preprocess Data ===
-@st.cache_resource
-def load_data_and_train_model():
-    df = pd.read_csv("Fertilizer Prediction.csv")  # Make sure this CSV is in your GitHub repo
-    label_encoders = {}
+# --- Cache CSV loading ---
+@st.cache_data
+def load_data():
+    df = pd.read_csv("Fertilizer Prediction.csv")
+    return df
 
+# --- Cache model training ---
+@st.cache_resource
+def train_model(df):
+    label_encoders = {}
     for col in df.select_dtypes(include='object').columns:
         le = LabelEncoder()
         df[col] = le.fit_transform(df[col])
@@ -28,6 +32,7 @@ def load_data_and_train_model():
 
     X = df.drop('Fertilizer Name', axis=1)
     y = df['Fertilizer Name']
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     def objective(trial):
@@ -54,13 +59,14 @@ def load_data_and_train_model():
 
     return clf, label_encoders, X_test, y_test, y_pred, accuracy
 
-# === Load Model and Data ===
-clf, label_encoders, X_test, y_test, y_pred, accuracy = load_data_and_train_model()
+# --- Load data and train model ---
+df = load_data()
+clf, label_encoders, X_test, y_test, y_pred, accuracy = train_model(df)
 
-# === Streamlit App ===
+# --- Streamlit UI ---
 st.title("🌿 Fertilizer Prediction Web App")
 
-st.sidebar.markdown("### Input Parameters")
+st.sidebar.header("Input Parameters")
 temp = st.sidebar.number_input("Temperature", 0.0, 100.0)
 humidity = st.sidebar.number_input("Humidity", 0.0, 100.0)
 moisture = st.sidebar.number_input("Moisture", 0.0, 100.0)
@@ -73,15 +79,14 @@ phosphorous = st.sidebar.number_input("Phosphorous", 0.0, 100.0)
 if st.sidebar.button("🔍 Predict"):
     soil_enc = label_encoders['Soil Type'].transform([soil])[0]
     crop_enc = label_encoders['Crop Type'].transform([crop])[0]
-    input_data = np.array([[temp, humidity, moisture, soil_enc, crop_enc, nitrogen, potassium, phosphorous]])
+    input_data = np.array([[temp, humidity, moisture, soil_enc, crop_enc,
+                            nitrogen, potassium, phosphorous]])
     pred_code = clf.predict(input_data)[0]
     fert_name = label_encoders['Fertilizer Name'].inverse_transform([pred_code])[0]
     st.success(f"✅ Predicted Fertilizer: **{fert_name}**")
 
-# === Show Model Accuracy ===
 st.markdown(f"### Model Accuracy: `{accuracy:.2%}`")
 
-# === Show Confusion Matrix ===
 st.markdown("### Confusion Matrix")
 cm = confusion_matrix(y_test, y_pred)
 fig1, ax1 = plt.subplots()
@@ -90,7 +95,6 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm,
 disp.plot(ax=ax1, cmap="Greens")
 st.pyplot(fig1)
 
-# === Show Precision-Recall Curves ===
 st.markdown("### Precision-Recall Curves")
 fig2, ax2 = plt.subplots(figsize=(10, 6))
 for i in np.unique(y_test):
@@ -100,7 +104,6 @@ for i in np.unique(y_test):
 plt.title("Precision-Recall Curve")
 st.pyplot(fig2)
 
-# === Optional: Show Test Results Table ===
 if st.checkbox("Show Predictions Table"):
     results_df = X_test.copy()
     results_df['Actual'] = label_encoders['Fertilizer Name'].inverse_transform(y_test)
